@@ -1,0 +1,13 @@
+name = "UniformIsingModels"
+uuid = "91393fb9-e38b-4a31-9409-aa579b4163ad"
+authors = ["Stefano Crotti <stefano.crotti@polito.it> and contributors"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1"
+
+[targets]
+test = ["Test"]
