@@ -1,21 +1,10 @@
-N = 10
-J = 2.0
-h = randn(N)
-β = 0.1
-
-x = UniformIsing(N, J, h; β)
-
+# Loop once over all 2^N states and compute observables
 function Obs(f::Function)
     o = 0.0
     function measure(x::UniformIsing, s) 
         o += f(x, s)
     end
 end
-
-_normaliz = (x, s) -> exp(-x.β*energy(x, s))
-_energy = (x, s) -> energy(x, s)
-_obs_marginals = [Obs((x, s) -> exp(-x.β*energy(x, s))*(s[i]==1)) for i in 1:x.N]
-
 function observables_bruteforce(x::UniformIsing, 
         observables::Vector{<:Function})
     for s in Iterators.product(fill((-1,1),x.N)...)
@@ -26,12 +15,20 @@ function observables_bruteforce(x::UniformIsing,
     [obs.o.contents for obs in observables]
 end
 
-observables = vcat([Obs(_normaliz), Obs(_energy)], obs_marginals)
-obs_bruteforce = observables_bruteforce(x, observables)
+N = 10
+J = 0.5
+h = 1.2*randn(N)
+β = 2.3
+
+x = UniformIsing(N, J, h; β)
+
+_normaliz = (x, s) -> exp(-x.β*energy(x, s))
+obs_marginals = [Obs((x, s) -> exp(-x.β*energy(x, s))*(s[i]==1)) for i in 1:x.N]
+
+obs_bruteforce = observables_bruteforce(x, vcat([Obs(_normaliz)], obs_marginals))
 
 Z_bruteforce = obs_bruteforce[1]
-E_bruteforce = obs_bruteforce[2]
-marginals_bruteforce = obs_bruteforce[2+1:2+x.N] ./ Z_bruteforce
+marginals_bruteforce = obs_bruteforce[1+1:1+x.N] ./ Z_bruteforce
 
 @testset "normalization" begin
     Z = normalization(x)
