@@ -20,7 +20,7 @@ J = 0.5
 h = 1.2*randn(N)
 β = 2.3
 
-x = UniformIsing(N, J, h; β)
+x = UniformIsing(N, J, h; β=β)
 
 _normaliz = (x, s) -> exp(-x.β*energy(x, s))
 obs_marginals = [Obs((x, s) -> exp(-x.β*energy(x, s))*(s[i]==1)) for i in 1:x.N]

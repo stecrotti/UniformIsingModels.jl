@@ -20,15 +20,12 @@ function normalization(x::UniformIsing)
     sum( exp(x.β*x.J/2*(s^2/N-1))* x.L[N][s] for s in -N:N )
 end
 
-function energy(x::UniformIsing, s)
-    E_edges = 0.0
-    for i in 1:x.N
-        for j in 1:i-1
-            E_edges += s[i]*s[j]
-        end
-    end
-    E_fields = dot(s, x.h)
-    -x.J/x.N*E_edges - E_fields
+pdf(x::UniformIsing, σ; Z = normalization(x)) = exp(-x.β*energy(x, σ)) / Z
+
+function energy(x::UniformIsing, σ)
+    s = sum(σ)
+    f = dot(σ, x.h)
+    -( x.J/2*(s^2/x.N-1) + f ) 
 end
 
 # p(σᵢ = +1)
@@ -47,3 +44,31 @@ function marginals!(p, x::UniformIsing; Z = normalization(x))
     p
 end
 marginals(x::UniformIsing{T}; kw...) where T = marginals!(zeros(T,x.N), x; kw...)
+
+function sample_spin(rng::AbstractRNG, p::Real)
+    @assert 0 ≤ p ≤ 1
+    r = rand(rng)
+    r < p ? 1 : -1
+end
+
+# hierarchical sampling
+# return a sample along with its probability
+function sample!(rng::AbstractRNG, σ, x::UniformIsing; Z = normalization(x))
+    @unpack N, J, h, β, L, R = x
+    a = 0.0; b = 0
+    for i in 1:N
+        tmp = 0.0
+        for s in -N:N
+            tmp += exp(β*J/2*((b+1+s)^2/N-1)) * R[i+1][s]
+        end
+        pi = exp(β*(a + h[i])) / Z * tmp
+        σi = sample_spin(rng, pi)
+        σ[i] = σi
+        a += h[i]*σi
+        b += σi
+    end
+    p = exp(β*(J/2*(b^2/N-1) + a)) / Z
+    σ, p
+end
+sample!(σ, x::UniformIsing; kw...) = sample!(GLOBAL_RNG, σ, x; kw...)
+sample(x::UniformIsing; kw...) = sample!(zeros(Int, x.N), x; kw...)
