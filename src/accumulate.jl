@@ -36,3 +36,22 @@ function accumulate_right(h, β)
     accumulate_right!(R, h, β)
 end
 
+function accumulate_middle!(M, h, β)
+    N = length(h)
+    for i in 1:N
+        for s in (-1,1)
+            M[i,i][s] = exp(β*h[i]*s)
+        end
+        for j in i+1:N
+            for s in -(j-i+1):j-i+1
+                M[i,j][s] = exp(β*h[j])*M[i,j-1][s-1] + exp(-β*h[j])*M[i,j-1][s+1]
+            end
+        end
+    end
+    M
+end
+function accumulate_middle(h, β)
+    N = length(h)
+    M = [fill(0.0, -(N+1):(N+1)) for i in 1:N, j in 1:N]
+    accumulate_middle!(M, h, β)
+end

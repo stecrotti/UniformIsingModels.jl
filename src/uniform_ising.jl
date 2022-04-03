@@ -65,6 +65,55 @@ function site_magnetizations(x::UniformIsing{T,U}) where {T,U}
     site_magnetizations!(zeros(T,x.N), x)
 end
 
+function pair_magnetizations!(m, x::UniformIsing{T,U};
+        M = accumulate_middle(x.h, x.β)) where {T,U}
+    @unpack N, J, h, β, L, R, Z = x
+    f(s) = β*J/2*(s^2/N-1)
+    for i in 1:N
+        # j = i
+        m[i,i] = 1
+        # j = i+1
+        j = i + 1
+        j > N && break
+        m[i,j] = 0
+        for sL in -N:N
+            for sR in -N:N
+                s = sL + sR
+                m[i,j] += ( exp( f(s+2) + β*(h[i]+h[j]) ) + 
+                            exp( f(s-2) - β*(h[i]+h[j]) ) -
+                            exp( f(s)   + β*(h[i]-h[j]) ) - 
+                            exp( f(s)   - β*(h[i]-h[j]) )   ) * 
+                            L[i-1][sL] * R[j+1][sR]
+            end
+        end
+        m[i,j] /= Z; m[j,i] = m[i,j]
+        # j > i + 1
+        for j in i+2:N
+            m[i,j] = 0
+            for sM in -N:N
+                for sL in -N:N
+                    for sR in -N:N
+                        s = sL + sM + sR 
+                        # m[i,j] += 2*( exp(β*J/2*((s^2+4)/N-1))*sinh(β*(2J/N+h[i]+h[j])) -
+                        #               exp(β*J/2*(s^2/N-1)) * sinh(β*(h[i]-h[j])) ) *
+                        #               L[i-1][sL] * M[i+1,j-1][sM] * R[j+1][sR]
+                        m[i,j] += ( exp( f(s+2) + β*(h[i]+h[j]) ) + 
+                                    exp( f(s-2) - β*(h[i]+h[j]) ) -
+                                    exp( f(s)   + β*(h[i]-h[j]) ) - 
+                                    exp( f(s)   - β*(h[i]-h[j]) )   ) *
+                                  L[i-1][sL] * M[i+1,j-1][sM] * R[j+1][sR]
+                    end
+                end
+            end
+            m[i,j] /= Z; m[j,i] = m[i,j]
+        end
+    end
+    m
+end
+function pair_magnetizations(x::UniformIsing{T,U}; kw...) where {T,U} 
+    pair_magnetizations!(zeros(T,x.N,x.N), x; kw...)
+end
+
 function sample_spin(rng::AbstractRNG, p::Real)
     @assert 0 ≤ p ≤ 1
     r = rand(rng)

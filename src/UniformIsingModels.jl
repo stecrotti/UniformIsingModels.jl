@@ -7,6 +7,7 @@ import Random: GLOBAL_RNG, AbstractRNG
 
 export UniformIsing, energy, normalization, pdf, 
         site_magnetizations!, site_magnetizations,
+        pair_magnetizations!, pair_magnetizations,
         sample!, sample
 
 include("accumulate.jl")
