@@ -5,7 +5,8 @@ import LinearAlgebra: dot
 import UnPack: @unpack
 import Random: GLOBAL_RNG, AbstractRNG
 
-export UniformIsing, energy, normalization, pdf, marginals!, marginals,
+export UniformIsing, energy, normalization, pdf, 
+        site_magnetizations!, site_magnetizations,
         sample!, sample
 
 include("accumulate.jl")

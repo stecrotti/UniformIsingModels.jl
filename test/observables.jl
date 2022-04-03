@@ -23,21 +23,21 @@ h = 1.2*randn(N)
 x = UniformIsing(N, J, h; β=β)
 
 _normaliz = (x, s) -> exp(-x.β*energy(x, s))
-obs_marginals = [Obs((x, s) -> exp(-x.β*energy(x, s))*(s[i]==1)) for i in 1:x.N]
+obs_magnetiz = [Obs((x, s) -> exp(-x.β*energy(x, s))*s[i]) for i in 1:x.N]
 
-obs_bruteforce = observables_bruteforce(x, vcat([Obs(_normaliz)], obs_marginals))
+obs_bruteforce = observables_bruteforce(x, vcat([Obs(_normaliz)], obs_magnetiz))
 
 Z_bruteforce = obs_bruteforce[1]
-marginals_bruteforce = obs_bruteforce[1+1:1+x.N] ./ Z_bruteforce
+magnetiz_bruteforce = obs_bruteforce[1+1:1+x.N] ./ Z_bruteforce
 
 @testset "normalization" begin
     Z = normalization(x)
     @test Z ≈ Z_bruteforce
 end
 
-@testset "marginals" begin
-    p = marginals(x)
+@testset "magnetizations" begin
+    m = site_magnetizations(x)
     @test all(1:x.N) do i 
-        p[i] ≈ marginals_bruteforce[i]
+        m[i] ≈ magnetiz_bruteforce[i]
     end
 end
