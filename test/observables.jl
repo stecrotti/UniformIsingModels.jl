@@ -25,26 +25,16 @@ h = 1.2*randn(N)
 
 x = UniformIsing(N, J, h; β=β)
 
-_normaliz = (x, s) -> exp(-x.β*energy(x, s))
-obs_magnetiz = [Obs((x, s) -> exp(-x.β*energy(x, s))*s[i]) for i in 1:x.N]
-obs_pair_magnetiz = [Obs((x, s) -> exp(-x.β*energy(x, s))*s[i]*s[j]) 
-                                        for i in 1:x.N for j in 1:x.N]
-
-obs_bruteforce = observables_bruteforce(x, vcat([Obs(_normaliz)], 
-                                                 obs_magnetiz,
-                                                 obs_pair_magnetiz))
-
-Z_bruteforce = obs_bruteforce[1]
-magnetiz_bruteforce = obs_bruteforce[1+1:1+x.N] ./ Z_bruteforce
-pair_magnetiz_bruteforce = obs_bruteforce[1+x.N+1:end] ./ Z_bruteforce
-
 @testset "normalization" begin
-    Z = normalization(x)
-    @test Z ≈ Z_bruteforce
+    _normaliz = (x, s) -> exp(-x.β*energy(x, s))
+    Z_bruteforce = observables_bruteforce(x, [Obs(_normaliz)])[1]
+    @test x.Z ≈ Z_bruteforce
 end
 
 @testset "magnetizations" begin
     m = site_magnetizations(x)
+    _magnetiz = [Obs((x, s) -> pdf(x, s)*s[i]) for i in 1:x.N]
+    magnetiz_bruteforce = observables_bruteforce(x, _magnetiz)
     @test all(1:x.N) do i 
         m[i] ≈ magnetiz_bruteforce[i]
     end
@@ -52,8 +42,25 @@ end
 
 @testset "pair magnetizations" begin
     p = pair_magnetizations(x)
+    _pair_magnetiz = [Obs((x, s) -> pdf(x, s)*s[i]*s[j]) 
+                                        for i in 1:x.N for j in 1:x.N]
+    pair_magnetiz_bruteforce = observables_bruteforce(x, _pair_magnetiz)
     @test all(Iterators.product(1:x.N,1:x.N)) do (i,j) 
         k = Int( (j-1)*N + i )
         p[i,j] ≈ pair_magnetiz_bruteforce[k]
     end
+end
+
+@testset "average energy" begin
+    U = avg_energy(x)
+    _energy = Obs((x,s) -> pdf(x,s)*energy(x,s))
+    avg_energy_bruteforce = observables_bruteforce(x, [_energy])[1]
+    @test U ≈ avg_energy_bruteforce
+end
+
+@testset "entropy" begin
+    S = entropy(x)
+    _entropy = Obs((x,s) -> -pdf(x,s)*log(pdf(x,s)))
+    entropy_bruteforce = observables_bruteforce(x, [_entropy])[1]
+    @test S ≈ entropy_bruteforce
 end

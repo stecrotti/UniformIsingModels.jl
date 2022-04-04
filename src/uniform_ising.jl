@@ -6,7 +6,7 @@ struct UniformIsing{T<:Real, U<:OffsetVector}
     L :: OffsetVector{U, Vector{U}}
     R :: OffsetVector{U, Vector{U}}
     Z :: T
-    function UniformIsing(N::Int, J::T, h::Vector{T}; β = 1.0) where T
+    function UniformIsing(N::Int, J::T, h::Vector{T}, β::T) where T
         @assert length(h) == N
         @assert J ≥ 0
         @assert β ≥ 0
@@ -15,6 +15,14 @@ struct UniformIsing{T<:Real, U<:OffsetVector}
         Z = sum( exp(β*J/2*(s^2/N-1))*L[N][s] for s in -N:N )
         new{T, eltype(L)}(N, J, h, β, L, R, Z)
     end
+end
+
+function UniformIsing(N::Int, J::Real, h::Vector{<:Real}; β::Real = 1.0)
+    T = promote_type(typeof(J), eltype(h), typeof(β))
+    J = convert(T, J)
+    h = convert(Vector{T}, h)
+    β = convert(T, β)
+    UniformIsing(N, J, h, β)
 end
 
 normalization(x::UniformIsing) = x.Z
@@ -141,3 +149,19 @@ function sample!(rng::AbstractRNG, σ, x::UniformIsing)
 end
 sample!(σ, x::UniformIsing) = sample!(GLOBAL_RNG, σ, x)
 sample(x::UniformIsing) = sample!(zeros(Int, x.N), x)
+
+function avg_energy(x::UniformIsing; 
+        m = site_magnetizations(x), p = pair_magnetizations(x))
+    E_sites = E_pairs = 0.0
+    for i in 1:x.N
+        E_sites += m[i]*x.h[i]
+        for j in i+1:x.N
+            E_pairs += p[i,j]
+        end
+    end
+    E_pairs *= x.J/x.N
+    - (E_sites + E_pairs)
+end
+
+free_energy(x::UniformIsing) = -1/x.β*log(x.Z)
+entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x)) 
