@@ -47,3 +47,7 @@ c = correlations(x)
 # energy expected value
 U = avg_energy(x)
 ```
+
+## Notes
+The internals rely heavily on dynamic programming.
+If you know of any faster implementation please do let me know!
