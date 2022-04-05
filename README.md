@@ -15,8 +15,9 @@ is exactly solvable in polynomial time.
 | Normalization, Free energy      |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^2)) |
 | Sample a configuration      |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^2)) |
 | Site magnetizations     | ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))     |
+| Distribution of the sum of the N spins | ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))     |
+| Average energy, Entropy |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))  |
 | Pair magnetizations, Correlations |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^5))  |
-| Average energy, Entropy |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^5))  |
 
 ## Example
 
@@ -33,31 +34,36 @@ x = UniformIsing(N, J, h, β)
 ```
 Compute stuff
 ```
-# normalization
+# normalization and free energy
 Z = x.Z
+F = free_energy(x)
 
 # energy and probability of a configuration
 σ = rand(rng, (-1,1), N) 
 E = energy(x, σ)
 prob = pdf(x, σ)
 
-# magnetizations <σᵢ>
-m = site_magnetizations(x)
-
-# pairwise magnetizations <σᵢσⱼ> and correlations
-p = pair_magnetizations(x)
-c = correlations(x)
-
 # a sample along with its probability 
 σ, p = sample(rng, x)
+
+# single-site magnetizations <σᵢ>
+m = site_magnetizations(x)
+
+# distribution of the sum Σᵢσᵢ of all variables
+ps = sum_distribution(x)
 
 # energy expected value
 U = avg_energy(x)
 
 # entropy
 S = entropy(x)
+
+# pairwise magnetizations <σᵢσⱼ> and correlations
+p = pair_magnetizations(x)
+c = correlations(x)
+
 ```
 
 ## Notes
-The internals rely heavily on dynamic programming.
+The internals rely on dynamic programming.
 If you know of any faster implementation please do let me know!
