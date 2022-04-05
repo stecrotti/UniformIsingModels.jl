@@ -10,6 +10,7 @@ export UniformIsing, energy, normalization, pdf,
         site_magnetizations!, site_magnetizations,
         pair_magnetizations!, pair_magnetizations,
         correlations!, correlations,
+        sum_distribution!, sum_distribution,
         sample!, sample,
         avg_energy, entropy, free_energy
 
@@ -20,8 +21,8 @@ struct UniformIsing{T<:Real, U<:OffsetVector}
     J :: T                  # uniform coupling strength
     h :: Vector{T}          # external fields
     β :: T                  # inverse temperature
-    L :: OffsetVector{U, Vector{U}} # pre-computed useful quantities
-    R :: OffsetVector{U, Vector{U}} # pre-computed useful quantities
+    L :: OffsetVector{U, Vector{U}} # partial sums from the left
+    R :: OffsetVector{U, Vector{U}} # partial sums from the right
     Z :: T                  # normalization
     function UniformIsing(N::Int, J::T, h::Vector{T}, β::T=1.0) where T
         @assert length(h) == N
@@ -47,6 +48,41 @@ end
 
 pdf(x::UniformIsing, σ) = exp(-x.β*energy(x, σ)) / x.Z
 
+free_energy(x::UniformIsing) = -1/x.β*log(x.Z)
+
+function sample_spin(rng::AbstractRNG, p::Real)
+    @assert 0 ≤ p ≤ 1
+    r = rand(rng)
+    r < p ? 1 : -1
+end
+
+# return a sample along with its probability
+function sample!(rng::AbstractRNG, σ, x::UniformIsing)
+    @unpack N, J, h, β, L, R, Z = x
+    a = 0.0; b = 0
+    f(s) = β*J/2*(s^2/N-1)
+    for i in 1:N
+        tmp_plus = tmp_minus = 0.0
+        for s in -N:N
+            tmp_plus += exp(f(b+1+s)) * R[i+1][s]
+            tmp_minus += exp(f(b-1+s)) * R[i+1][s]
+        end
+        p_plus = exp(β*h[i]) * tmp_plus
+        p_minus = exp(-β*h[i]) * tmp_minus
+        p_i = p_plus / (p_plus + p_minus)
+        σi = sample_spin(rng, p_i)
+        σ[i] = σi
+        a += h[i]*σi
+        b += σi
+    end
+    p = exp(f(b) + β*a) / Z
+    @assert a == dot(h, σ); @assert b == sum(σ)
+    σ, p
+end
+sample!(σ, x::UniformIsing) = sample!(GLOBAL_RNG, σ, x)
+sample(rng::AbstractRNG, x::UniformIsing) = sample!(rng, zeros(Int, x.N), x)
+sample(x::UniformIsing) = sample(GLOBAL_RNG, x)
+
 function site_magnetizations!(p, x::UniformIsing)
     @unpack N, J, h, β, L, R, Z = x
     f(s) = β*J/2*(s^2/N-1)
@@ -66,6 +102,30 @@ end
 function site_magnetizations(x::UniformIsing{T,U}) where {T,U} 
     site_magnetizations!(zeros(T,x.N), x)
 end
+
+# distribution of the sum of all variables as an OffsetVector
+function sum_distribution!(p, x::UniformIsing)
+    @unpack N, J, β, L, Z = x
+    for s in -N:N
+        p[s] = exp(β*J/2*(s^2/N-1))*L[N][s] / Z 
+    end
+    p
+end
+function sum_distribution(x::UniformIsing{T,U}) where {T,U} 
+    p = fill(zero(T), -x.N:x.N)
+    sum_distribution!(p, x)
+end
+
+function avg_energy(x::UniformIsing{T}; 
+    p = sum_distribution(x), m = site_magnetizations(x)) where T
+    @unpack N, J, h, β, L, R, Z = x
+    s2 = sum(s^2*p[s] for s in eachindex(p))
+    U_pairs = J/2*(s2/N-1)
+    U_sites = dot(h, m)
+    - (U_pairs + U_sites)
+end
+
+entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x)) 
 
 function pair_magnetizations!(m, x::UniformIsing{T,U};
         M = accumulate_middle(x.h, x.β)) where {T,U}
@@ -126,50 +186,5 @@ end
 function correlations(x::UniformIsing{T,U}; kw...) where {T,U} 
     correlations!(zeros(T,x.N,x.N), x; kw...)
 end
-
-function sample_spin(rng::AbstractRNG, p::Real)
-    @assert 0 ≤ p ≤ 1
-    r = rand(rng)
-    r < p ? 1 : -1
-end
-
-# hierarchical sampling
-# return a sample along with its probability
-function sample!(rng::AbstractRNG, σ, x::UniformIsing)
-    @unpack N, J, h, β, L, R, Z = x
-    a = 0.0; b = 0
-    for i in 1:N
-        tmp = 0.0
-        for s in -N:N
-            tmp += exp(β*J/2*((b+1+s)^2/N-1)) * R[i+1][s]
-        end
-        pi = exp(β*(a + h[i])) / Z * tmp
-        σi = sample_spin(rng, pi)
-        σ[i] = σi
-        a += h[i]*σi
-        b += σi
-    end
-    p = exp(β*(J/2*(b^2/N-1) + a)) / Z
-    σ, p
-end
-sample!(σ, x::UniformIsing) = sample!(GLOBAL_RNG, σ, x)
-sample(rng::AbstractRNG, x::UniformIsing) = sample!(rng, zeros(Int, x.N), x)
-sample(x::UniformIsing) = sample(GLOBAL_RNG, x)
-
-function avg_energy(x::UniformIsing; 
-        m = site_magnetizations(x), p = pair_magnetizations(x))
-    E_sites = E_pairs = 0.0
-    for i in 1:x.N
-        E_sites += m[i]*x.h[i]
-        for j in i+1:x.N
-            E_pairs += p[i,j]
-        end
-    end
-    E_pairs *= x.J/x.N
-    - (E_sites + E_pairs)
-end
-
-free_energy(x::UniformIsing) = -1/x.β*log(x.Z)
-entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x)) 
 
 end # end module
