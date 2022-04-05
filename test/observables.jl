@@ -23,7 +23,7 @@ J = 0.5
 h = 1.2*randn(N)
 β = 2.3
 
-x = UniformIsing(N, J, h; β=β)
+x = UniformIsing(N, J, h, β)
 
 @testset "normalization" begin
     _normaliz = (x, s) -> exp(-x.β*energy(x, s))

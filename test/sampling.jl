@@ -3,9 +3,9 @@ J = 2.5
 h = 0.3*randn(N)
 β = 0.1
 
-x = UniformIsing(N, J, h; β=β)
+x = UniformIsing(N, J, h, β)
 
-nsamples = 100
+nsamples = 10^4
 @testset "sampling" begin
     @test all(1:nsamples) do n
         σ, p = sample(x)
