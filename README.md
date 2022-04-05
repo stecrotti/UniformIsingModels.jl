@@ -5,7 +5,7 @@
 
 A fully-connected ferromagnetic Ising model with uniform coupling strength, described by a Boltzmann distribution
 
->![equation](https://latex.codecogs.com/svg.image?p(\sigma|J,&space;\boldsymbol{h},&space;\beta)&space;=&space;\frac{1}{Z_{J,&space;\boldsymbol{h},&space;\beta}}\exp\left[\beta\left(\frac{J}{N}\sum_{i<j}\sigma_i\sigma_j&space;&plus;\sum_{i=1}^Nh_i\sigma_i\right)\right])
+>![equation](https://latex.codecogs.com/svg.image?p(\boldsymbol\sigma|J,&space;\boldsymbol{h},&space;\beta)&space;=&space;\frac{1}{Z_{J,&space;\boldsymbol{h},&space;\beta}}\exp\left[\beta\left(\frac{J}{N}\sum_{i<j}\sigma_i\sigma_j&space;&plus;\sum_{i=1}^Nh_i\sigma_i\right)\right],\quad\boldsymbol\sigma\in\\{-1,1\\}^N)
 
 is exactly solvable in polynomial time.
 
@@ -26,26 +26,36 @@ using UniformIsingModels, Random
 
 N = 10
 J = 2.0
-h = randn(MersenneTwister(0), 10)
+rng = MersenneTwister(0)
+h = randn(rng, 10)
 β = 0.1
-x = UniformIsing(N, J, h; β=β)
+x = UniformIsing(N, J, h, β)
 ```
 Compute stuff
 ```
 # normalization
 Z = x.Z
 
-# magnetizations
+# energy and probability of a configuration
+σ = rand(rng, (-1,1), N) 
+E = energy(x, σ)
+prob = pdf(x, σ)
+
+# magnetizations <σᵢ>
 m = site_magnetizations(x)
 
-# pairwise correlations
+# pairwise magnetizations <σᵢσⱼ> and correlations
+p = pair_magnetizations(x)
 c = correlations(x)
 
 # a sample along with its probability 
-σ, p = sample(MersenneTwister(0), x)
+σ, p = sample(rng, x)
 
 # energy expected value
 U = avg_energy(x)
+
+# entropy
+S = entropy(x)
 ```
 
 ## Notes
