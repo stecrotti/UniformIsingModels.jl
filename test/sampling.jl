@@ -8,8 +8,8 @@ x = UniformIsing(N, J, h, β)
 nsamples = 10^3
 ntests = 20
 @testset "sampling" begin
-    X = [UniformIsingModels.sample(x)[1] for _ in 1:nsamples]
-    σ_test = [rand((-1,1), N) for _ in 1:ntests]
+    X = [sample(x)[1] for _ in 1:nsamples]
+    σ_test = [rand([-1,1], N) for _ in 1:ntests]
     tol = 1 / sqrt(nsamples)
     @test all(1:ntests) do t
         σ = σ_test[t]
