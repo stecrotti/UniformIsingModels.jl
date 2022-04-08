@@ -51,6 +51,18 @@ end
     end
 end
 
+@testset "correlations" begin
+    m = site_magnetizations(x)
+    c = correlations(x)
+    _correl = [Obs((x, s) -> pdf(x, s)*(s[i]*s[j]-m[i]*m[j])) 
+                                        for i in 1:x.N for j in 1:x.N]
+    correl_bruteforce = observables_bruteforce(x, _correl)
+    @test all(Iterators.product(1:x.N,1:x.N)) do (i,j) 
+        k = Int( (j-1)*N + i )
+        c[i,j] ≈ correl_bruteforce[k]
+    end
+end
+
 @testset "average energy" begin
     U = avg_energy(x)
     _energy = Obs((x,s) -> pdf(x,s)*energy(x,s))
