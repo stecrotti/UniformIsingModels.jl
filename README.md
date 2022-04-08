@@ -66,4 +66,5 @@ c = correlations(x)
 
 ## Notes
 The internals rely on dynamic programming.
-If you know of any faster implementation please do let me know!
+
+If you know of any implementation that's more efficient than this one I'd be very happy to learn about it!
