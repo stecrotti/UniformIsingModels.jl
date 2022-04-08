@@ -59,6 +59,7 @@ end
     correl_bruteforce = observables_bruteforce(x, _correl)
     @test all(Iterators.product(1:x.N,1:x.N)) do (i,j) 
         k = Int( (j-1)*N + i )
+        @show c[i,j] correl_bruteforce[k]
         c[i,j] ≈ correl_bruteforce[k]
     end
 end
