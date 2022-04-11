@@ -20,7 +20,9 @@ is exactly solvable in polynomial time.
 | Pair magnetizations, Correlations |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^5))  |
 
 ## Example
-
+```
+]add UniformIsingModels
+```
 Construct a `UniformIsing` instance
 ```
 using UniformIsingModels, Random
