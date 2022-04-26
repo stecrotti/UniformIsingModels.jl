@@ -28,7 +28,7 @@ x = UniformIsing(N, J, h, β)
 @testset "normalization" begin
     _normaliz = (x, s) -> exp(-x.β*energy(x, s))
     Z_bruteforce = observables_bruteforce(x, [Obs(_normaliz)])[1]
-    @test x.Z ≈ Z_bruteforce
+    @test x.logZ ≈ log(Z_bruteforce)
 end
 
 @testset "magnetizations" begin
