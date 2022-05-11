@@ -5,6 +5,7 @@ import LinearAlgebra: dot
 import Base: show
 import UnPack: @unpack
 import Random: GLOBAL_RNG, AbstractRNG
+import LogExpFunctions: logsumexp, logaddexp, logsubexp
 
 export UniformIsing, energy, normalization, pdf, 
         site_magnetizations!, site_magnetizations,
@@ -23,15 +24,15 @@ struct UniformIsing{T<:Real, U<:OffsetVector}
     β :: T                  # inverse temperature
     L :: OffsetVector{U, Vector{U}} # partial sums from the left
     R :: OffsetVector{U, Vector{U}} # partial sums from the right
-    Z :: T                  # normalization
+    logZ :: T                  # normalization
     function UniformIsing(N::Int, J::T, h::Vector{T}, β::T=1.0) where T
         @assert length(h) == N
         @assert J ≥ 0
         @assert β ≥ 0
         L = accumulate_left(h, β)
         R = accumulate_right(h, β)
-        Z = sum( exp(β*J/2*(s^2/N-1))*L[N][s] for s in -N:N )
-        new{T, eltype(L)}(N, J, h, β, L, R, Z)
+        logZ = logsumexp( β*J/2*(s^2/N-1) + L[N][s] for s in -N:N )
+        new{T, eltype(L)}(N, J, h, β, L, R, logZ)
     end
 end
 
@@ -46,9 +47,9 @@ function energy(x::UniformIsing, σ)
     -( x.J/2*(s^2/x.N-1) + f ) 
 end
 
-pdf(x::UniformIsing, σ) = exp(-x.β*energy(x, σ)) / x.Z
+pdf(x::UniformIsing, σ) = exp(-x.β*energy(x, σ) - x.logZ)
 
-free_energy(x::UniformIsing) = -1/x.β*log(x.Z)
+free_energy(x::UniformIsing) = -1/x.β*x.logZ
 
 function sample_spin(rng::AbstractRNG, p::Real)
     @assert 0 ≤ p ≤ 1
@@ -58,14 +59,14 @@ end
 
 # return a sample along with its probability
 function sample!(rng::AbstractRNG, σ, x::UniformIsing)
-    @unpack N, J, h, β, L, R, Z = x
+    @unpack N, J, h, β, L, R, logZ = x
     a = 0.0; b = 0
     f(s) = β*J/2*(s^2/N-1)
     for i in 1:N
         tmp_plus = tmp_minus = 0.0
         for s in -N:N
-            tmp_plus += exp(f(b+1+s)) * R[i+1][s]
-            tmp_minus += exp(f(b-1+s)) * R[i+1][s]
+            tmp_plus += exp(f(b+1+s) + R[i+1][s])
+            tmp_minus += exp(f(b-1+s) + R[i+1][s])
         end
         p_plus = exp(β*h[i]) * tmp_plus
         p_minus = exp(-β*h[i]) * tmp_minus
@@ -75,7 +76,7 @@ function sample!(rng::AbstractRNG, σ, x::UniformIsing)
         a += h[i]*σi
         b += σi
     end
-    p = exp(f(b) + β*a) / Z
+    p = exp(f(b) + β*a - logZ)
     @assert a == dot(h, σ); @assert b == sum(σ)
     σ, p
 end
@@ -83,19 +84,22 @@ sample!(σ, x::UniformIsing) = sample!(GLOBAL_RNG, σ, x)
 sample(rng::AbstractRNG, x::UniformIsing) = sample!(rng, zeros(Int, x.N), x)
 sample(x::UniformIsing) = sample(GLOBAL_RNG, x)
 
+# first store in `p[i]` the quantity log(p(σᵢ=+1)), then transform at the end 
 function site_magnetizations!(p, x::UniformIsing)
-    @unpack N, J, h, β, L, R, Z = x
+    @unpack N, J, h, β, L, R, logZ = x
     f(s) = β*J/2*(s^2/N-1)
     for i in eachindex(p)
-        p[i] = 0
+        p[i] = -Inf
         for sL in -N:N
             for sR in -N:N
                 s = sL + sR
-                p[i] += ( exp( f(s+1) + β*h[i] ) - exp( f(s-1) - β*h[i] ) ) *
-                            L[i-1][sL] * R[i+1][sR]
+                p[i] = logaddexp(p[i], f(s+1) + β*h[i] + L[i-1][sL] + R[i+1][sR])
             end
         end
-        p[i] /= Z
+        # include normalization
+        p[i] = exp(p[i] - logZ)
+        # transform form p(+) to m=2p(+)-1
+        p[i] = 2*p[i] - 1
     end
     p
 end
@@ -105,9 +109,9 @@ end
 
 # distribution of the sum of all variables as an OffsetVector
 function sum_distribution!(p, x::UniformIsing)
-    @unpack N, J, β, L, Z = x
+    @unpack N, J, β, L, logZ = x
     for s in -N:N
-        p[s] = exp(β*J/2*(s^2/N-1))*L[N][s] / Z 
+        p[s] = exp( β*J/2*(s^2/N-1) + L[N][s] - logZ ) 
     end
     p
 end
@@ -118,7 +122,7 @@ end
 
 function avg_energy(x::UniformIsing{T}; 
     p = sum_distribution(x), m = site_magnetizations(x)) where T
-    @unpack N, J, h, β, L, R, Z = x
+    @unpack N, J, h, β, L, R, logZ = x
     s2 = sum(s^2*p[s] for s in eachindex(p))
     U_pairs = J/2*(s2/N-1)
     U_sites = dot(h, m)
@@ -129,7 +133,8 @@ entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x))
 
 function pair_magnetizations!(m, x::UniformIsing{T,U};
         M = accumulate_middle(x.h, x.β)) where {T,U}
-    @unpack N, J, h, β, L, R, Z = x
+    @unpack N, J, h, β, L, R, logZ = x
+    Z = exp(logZ)
     f(s) = β*J/2*(s^2/N-1)
     for i in 1:N
         # j = i
@@ -145,7 +150,7 @@ function pair_magnetizations!(m, x::UniformIsing{T,U};
                             exp( f(s-2) - β*(h[i]+h[j]) ) -
                             exp( f(s)   + β*(h[i]-h[j]) ) - 
                             exp( f(s)   - β*(h[i]-h[j]) )   ) * 
-                            L[i-1][sL] * R[j+1][sR]
+                            exp(L[i-1][sL] + R[j+1][sR]) 
             end
         end
         m[i,j] /= Z; m[j,i] = m[i,j]
@@ -157,11 +162,11 @@ function pair_magnetizations!(m, x::UniformIsing{T,U};
                     for sR in -N:N
                         s = sL + sM + sR 
                         m[i,j] += ( exp( f(s+2) + β*(h[i]+h[j]) ) + 
-                                    exp( f(s-2) - β*(h[i]+h[j]) ) -
-                                    exp( f(s)   + β*(h[i]-h[j]) ) - 
-                                    exp( f(s)   - β*(h[i]-h[j]) )   ) *
-                                  L[i-1][sL] * M[i+1,j-1][sM] * R[j+1][sR]
-                    end
+                                  exp( f(s-2) - β*(h[i]+h[j]) ) -
+                                  exp( f(s)   + β*(h[i]-h[j]) ) - 
+                                  exp( f(s)   - β*(h[i]-h[j]) )   ) *
+                                  exp(L[i-1][sL] + M[i+1,j-1][sM] + R[j+1][sR])
+                    end 
                 end
             end
             m[i,j] /= Z; m[j,i] = m[i,j]
