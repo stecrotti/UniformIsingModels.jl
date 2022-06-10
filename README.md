@@ -30,7 +30,7 @@ using UniformIsingModels, Random
 N = 10
 J = 2.0
 rng = MersenneTwister(0)
-h = randn(rng, 10)
+h = randn(rng, N)
 β = 0.1
 x = UniformIsing(N, J, h, β)
 ```
