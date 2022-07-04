@@ -37,7 +37,7 @@ x = UniformIsing(N, J, h, β)
 Compute stuff
 ```
 # normalization and free energy
-Z = x.Z
+Z = exp(x.logZ)
 F = free_energy(x)
 
 # energy and probability of a configuration
