@@ -18,20 +18,22 @@ export UniformIsing, energy, normalization, pdf,
 include("accumulate.jl")
 
 struct UniformIsing{T<:Real, U<:OffsetVector}
-    N :: Int                # number of spins
-    J :: T                  # uniform coupling strength
-    h :: Vector{T}          # external fields
-    β :: T                  # inverse temperature
-    L :: OffsetVector{U, Vector{U}} # partial sums from the left
-    R :: OffsetVector{U, Vector{U}} # partial sums from the right
+    N    :: Int                # number of spins
+    J    :: T                  # uniform coupling strength
+    h    :: Vector{T}          # external fields
+    β    :: T                  # inverse temperature
+    L    :: OffsetVector{U, Vector{U}} # partial sums from the left
+    R    :: OffsetVector{U, Vector{U}} # partial sums from the right
+    dLdB ::  OffsetVector{U, Vector{U}} # Derivative of L wrt β
     logZ :: T                  # normalization
     function UniformIsing(N::Int, J::T, h::Vector{T}, β::T=1.0) where T
         @assert length(h) == N
         @assert β ≥ 0
-        L = accumulate_left(h, β)
+        # L = accumulate_left(h, β)
         R = accumulate_right(h, β)
+        L, dLdB = accumulate_d_left(h, β)
         logZ = logsumexp( β*J/2*(s^2/N-1) + L[N][s] for s in -N:N )
-        new{T, eltype(L)}(N, J, h, β, L, R, logZ)
+        new{T, eltype(L)}(N, J, h, β, L, R, dLdB, logZ)
     end
 end
 
@@ -119,13 +121,10 @@ function sum_distribution(x::UniformIsing{T,U}) where {T,U}
     sum_distribution!(p, x)
 end
 
-function avg_energy(x::UniformIsing{T}; 
-    p = sum_distribution(x), m = site_magnetizations(x)) where T
-    @unpack N, J, h, β, L, R, logZ = x
-    s2 = sum(s^2*p[s] for s in eachindex(p))
-    U_pairs = J/2*(s2/N-1)
-    U_sites = dot(h, m)
-    - (U_pairs + U_sites)
+function avg_energy(x::UniformIsing{T}) where T
+    @unpack N, J, h, β, L, dLdB, logZ = x
+    Zt = sum( exp( β*J/2*(s^2/N-1) + L[N][s]) * (J/2*(s^2/N-1)+dLdB[N][s]) for s in -N:N)
+    -exp(log(Zt) - logZ)
 end
 
 entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x)) 

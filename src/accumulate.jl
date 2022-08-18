@@ -17,6 +17,32 @@ function accumulate_left(h, β)
     accumulate_left!(L, h, β)
 end
 
+function accumulate_d_left!(L, dLdB, h, β)
+    N = length(h)
+    L[0] .= -Inf; L[0][0] = 0.0; dLdB[0] .= 0.0
+    for k in 1:N
+        for s in -(k-1):k-1
+            L[k][s] = logaddexp( β*h[k] + L[k-1][s-1],
+                                -β*h[k] + L[k-1][s+1] )
+            dLdB[k][s] = (+h[k] + dLdB[k-1][s-1])*exp(+β*h[k]+L[k-1][s-1]) + 
+                       (-h[k] + dLdB[k-1][s+1])*exp(-β*h[k]+L[k-1][s+1])
+            dLdB[k][s] = dLdB[k][s] / exp(L[k][s])
+            isnan(dLdB[k][s]) && (dLdB[k][s] = 0.0)
+        end
+        L[k][k] = β*h[k] + L[k-1][k-1]
+        L[k][-k] = -β*h[k] + L[k-1][-k+1]
+        dLdB[k][k] = h[k] + dLdB[k-1][k-1]
+        dLdB[k][-k] = -h[k] + dLdB[k-1][-k+1]
+    end
+    L, dLdB
+end
+function accumulate_d_left(h, β)
+    N = length(h)
+    L = OffsetVector([fill(-Inf, -N:N) for i in 0:N], 0:N)
+    dLdB = OffsetVector([fill(0.0, -N:N) for i in 0:N], 0:N)
+    accumulate_d_left!(L, dLdB, h, β)
+end
+
 function accumulate_right!(R, h, β)
     N = length(h)
     R[N+1][0] = 0.0
