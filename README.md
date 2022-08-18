@@ -30,14 +30,14 @@ using UniformIsingModels, Random
 N = 10
 J = 2.0
 rng = MersenneTwister(0)
-h = randn(rng, 10)
+h = randn(rng, N)
 β = 0.1
 x = UniformIsing(N, J, h, β)
 ```
 Compute stuff
 ```
 # normalization and free energy
-Z = x.Z
+Z = exp(x.logZ)
 F = free_energy(x)
 
 # energy and probability of a configuration

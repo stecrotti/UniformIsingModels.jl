@@ -28,7 +28,6 @@ struct UniformIsing{T<:Real, U<:OffsetVector}
     logZ :: T                  # normalization
     function UniformIsing(N::Int, J::T, h::Vector{T}, β::T=1.0) where T
         @assert length(h) == N
-        @assert J ≥ 0
         @assert β ≥ 0
         # L = accumulate_left(h, β)
         R = accumulate_right(h, β)
