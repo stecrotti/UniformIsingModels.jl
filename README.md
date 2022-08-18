@@ -14,7 +14,7 @@ is exactly solvable in polynomial time.
 | ------------- | ----------- |
 | Normalization, Free energy      |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^2)) |
 | Sample a configuration      |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^2)) |
-| Average energy, Entropy |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))  |
+| Average energy, Entropy |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^2))  |
 | Site magnetizations     | ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))     |
 | Distribution of the sum of the N spins | ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^3))     |
 | Pair magnetizations, Correlations |  ![equation](https://latex.codecogs.com/svg.image?\mathcal{O}(N^5))  |
