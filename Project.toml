@@ -1,7 +1,7 @@
 name = "UniformIsingModels"
 uuid = "91393fb9-e38b-4a31-9409-aa579b4163ad"
 authors = ["Stefano Crotti <stefano.crotti@polito.it> and contributors"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
