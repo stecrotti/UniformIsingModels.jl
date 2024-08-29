@@ -24,7 +24,7 @@ J = 0.5
 h = 1.2 * randn(N)
 β = 2.3
 
-x = UniformIsing(J, h, β)
+x = UniformIsing(N, J, h, β)
 
 @testset "observables" begin
 

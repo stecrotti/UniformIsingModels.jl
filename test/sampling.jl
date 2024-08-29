@@ -3,7 +3,7 @@ J = 2.5
 h = 0.3*randn(N)
 β = 0.1
 
-x = UniformIsing(J, h, β)
+x = UniformIsing(N, J, h, β)
 
 nsamples = 10^3
 ntests = 20
