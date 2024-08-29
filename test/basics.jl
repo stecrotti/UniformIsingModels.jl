@@ -10,6 +10,11 @@ x = UniformIsing(N, J, β)
         @test all(isequal(0), x.h)
     end
 
+    @testset "left accumulator" begin
+        L = UniformIsingModels.accumulate_left(x.h, x.β)
+        @test L == x.L
+    end
+
     @testset "mutate and recompute partials" begin
         hnew = ones(N)
         Jnew = -1.1
