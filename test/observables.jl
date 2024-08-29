@@ -66,6 +66,13 @@ x = UniformIsing(N, J, h, β)
         end
     end
 
+    @testset "distribution of sum" begin
+        p = sum_distribution(x)
+        _sum_distr = [Obs((x, s) -> pdf(x, s) * (sum(s) == σ)) for σ in -N:N]
+        sum_distr_bruteforce = observables_bruteforce(x, _sum_distr)
+        @test p.parent ≈ sum_distr_bruteforce
+    end
+
     @testset "average energy" begin
         U = avg_energy(x)
         _energy = Obs((x,s) -> pdf(x,s)*energy(x,s))
