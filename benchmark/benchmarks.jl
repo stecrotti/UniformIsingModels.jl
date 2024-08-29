@@ -7,10 +7,10 @@ N = 100
 J = 0.5
 h = 1.2 * randn(N)
 β = 2.3
-x = UniformIsing(J, h, β)
+x = UniformIsing(N, J, h, β)
 
 SUITE["constructor"] = BenchmarkGroup()
-SUITE["constructor"]["constructor"] = @benchmarkable UniformIsing($J, $h, $β)
+SUITE["constructor"]["constructor"] = @benchmarkable UniformIsing($N, $J, $h, $β)
 
 SUITE["observables"] = BenchmarkGroup()
 SUITE["observables"]["normalization"] = @benchmarkable normalization(x)

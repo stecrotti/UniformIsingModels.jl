@@ -6,7 +6,8 @@ mutable struct UniformIsing{T<:Real, U<:OffsetVector}
     R    :: OffsetVector{U, Vector{U}} # partial sums from the right
     dLdβ ::  OffsetVector{U, Vector{U}} # Derivative of L wrt β
 
-    function UniformIsing(J::T, h::Vector{T}, β::T=1.0) where T
+    function UniformIsing(N::Integer, J::T, h::Vector{T}, β::T=1.0) where T
+        @assert length(h) == N
         @assert β ≥ 0
         R = accumulate_right(h, β)
         L, dLdβ = accumulate_d_left(h, β)
@@ -16,7 +17,7 @@ mutable struct UniformIsing{T<:Real, U<:OffsetVector}
 end
 function UniformIsing(N::Integer, J::T, β::T=1.0)  where {T<:Real}
     h = zeros(T, N)
-    return UniformIsing(J, h, β)
+    return UniformIsing(N, J, h, β)
 end
 
 # re-compute the partial quantities needed to compute observables, in case some parameter (`J,h,β`) was modified

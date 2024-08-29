@@ -14,7 +14,7 @@ x = UniformIsing(N, J, β)
         hnew = ones(N)
         x.h = hnew
         recompute_partials!(x)
-        xnew = UniformIsing(J, hnew, β)
+        xnew = UniformIsing(N, J, hnew, β)
         @test lognormalization(x) == lognormalization(xnew)
     end 
 

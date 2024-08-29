@@ -32,7 +32,7 @@ J = 2.0
 rng = MersenneTwister(0)
 h = randn(rng, N)
 β = 0.1
-x = UniformIsing(J, h, β)
+x = UniformIsing(N, J, h, β)
 ```
 Compute stuff
 ```
