@@ -1,19 +1,20 @@
 module UniformIsingModels
 
-import OffsetArrays: OffsetVector, fill
-import LinearAlgebra: dot
-import Base: show
-import UnPack: @unpack
-import Random: GLOBAL_RNG, AbstractRNG
-import LogExpFunctions: logsumexp, logaddexp, logsubexp
+using OffsetArrays: OffsetVector, fill
+using LinearAlgebra: dot
+using Random: default_rng, AbstractRNG
+using LogExpFunctions: logsumexp, logaddexp
 
-export UniformIsing, energy, normalization, pdf, 
+export UniformIsing, nvariables, variables, recompute_partials!,
+        energy, lognormalization, normalization, pdf,
+        avg_energy, entropy, free_energy, 
         site_magnetizations!, site_magnetizations,
         pair_magnetizations!, pair_magnetizations,
         correlations!, correlations,
         sum_distribution!, sum_distribution,
-        sample!, sample,
-        avg_energy, entropy, free_energy
+        sample!, sample
 
 include("accumulate.jl")
 include("uniform_ising.jl")
+
+end # end module
