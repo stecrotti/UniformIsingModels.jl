@@ -43,8 +43,8 @@ x = UniformIsing(N, J, h, β)
         end
     end
 
-    @testset "pair magnetizations" begin
-        p = pair_magnetizations(x)
+    @testset "correlations" begin
+        p = correlations(x)
         _pair_magnetiz = [Obs((x, s) -> pdf(x, s)*s[i]*s[j]) 
                                             for i in variables(x) for j in variables(x)]
         pair_magnetiz_bruteforce = observables_bruteforce(x, _pair_magnetiz)
@@ -54,9 +54,9 @@ x = UniformIsing(N, J, h, β)
         end
     end
 
-    @testset "correlations" begin
+    @testset "covariances" begin
         m = site_magnetizations(x)
-        c = correlations(x)
+        c = covariances(x)
         _correl = [Obs((x, s) -> pdf(x, s)*(s[i]*s[j]-m[i]*m[j])) 
                                             for i in variables(x) for j in variables(x)]
         correl_bruteforce = observables_bruteforce(x, _correl)

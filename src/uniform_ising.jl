@@ -132,7 +132,7 @@ end
 
 entropy(x::UniformIsing; kw...) = x.β * (avg_energy(x; kw...) - free_energy(x; kw...)) 
 
-function pair_magnetizations!(m, x::UniformIsing{T,U};
+function correlations!(m, x::UniformIsing{T,U};
         M = accumulate_middle(x.h, x.β), logZ = lognormalization(x)) where {T,U}
     (; J, h, β, L, R) = x
     N = nvariables(x)
@@ -176,12 +176,12 @@ function pair_magnetizations!(m, x::UniformIsing{T,U};
     end
     return m
 end
-function pair_magnetizations(x::UniformIsing{T,U}; kw...) where {T,U} 
-    pair_magnetizations!(zeros(T,nvariables(x),nvariables(x)), x; kw...)
+function correlations(x::UniformIsing{T,U}; kw...) where {T,U} 
+    correlations!(zeros(T,nvariables(x),nvariables(x)), x; kw...)
 end
 
-function correlations!(c, x::UniformIsing; logZ = lognormalization(x),
-        m = site_magnetizations(x; logZ), p = pair_magnetizations(x; logZ))
+function covariances!(c, x::UniformIsing; logZ = lognormalization(x),
+        m = site_magnetizations(x; logZ), p = correlations(x; logZ))
     N = nvariables(x)
     for i in 1:N
         for j in 1:N
@@ -190,6 +190,6 @@ function correlations!(c, x::UniformIsing; logZ = lognormalization(x),
     end
     return c
 end
-function correlations(x::UniformIsing{T,U}; kw...) where {T,U} 
-    correlations!(zeros(T,nvariables(x),nvariables(x)), x; kw...)
+function covariances(x::UniformIsing{T,U}; kw...) where {T,U} 
+    covariances!(zeros(T,nvariables(x),nvariables(x)), x; kw...)
 end
