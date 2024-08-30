@@ -9,8 +9,8 @@ export UniformIsing, nvariables, variables, recompute_partials!,
         energy, lognormalization, normalization, pdf,
         avg_energy, entropy, free_energy, 
         site_magnetizations!, site_magnetizations,
-        pair_magnetizations!, pair_magnetizations,
         correlations!, correlations,
+        covariances, covariances,
         sum_distribution!, sum_distribution,
         sample!, sample
 
