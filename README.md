@@ -5,7 +5,7 @@
 
 A fully-connected ferromagnetic [Ising model](https://en.wikipedia.org/wiki/Ising_model) with uniform coupling strength, described by a Boltzmann distribution
 
-$p(\boldsymbol{\sigma}) = \frac{1}{Z} \exp\left[\beta\left(\frac{J}{N}\sum_{i<j}\sigma_i\sigma_j+\sum_{i=1}^Nh_i\sigma_i\right)\right],\quad \boldsymbol{\sigma}\in\{-1,1\}^N $
+$p(\boldsymbol{\sigma}) = \frac{1}{Z} \exp\left[\beta\left(\frac{J}{N}\sum_{i<j}\sigma_i\sigma_j+\sum_{i=1}^Nh_i\sigma_i\right)\right],\quad \boldsymbol{\sigma}\in\\{-1,1\\}^N $
 
 is exactly solvable in polynomial time.
 
